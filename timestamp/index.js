@@ -34,27 +34,35 @@ var listener = app.listen(process.env.PORT || 3000, function () {
 
 let outputObject = {}
 
-app.get('/api/:date?', (req,res) => {
-  let date_string = req.params.date
-  
-  if (date_string.includes('-')) {
-    outputObject['unix'] = new Date(date_string).getTime()
-    outputObject['utc'] = new Date(date_string).toUTCString()
-  }
-  else {
-    input = parseInt(date_string)
-    outputObject['unix'] = new Date(input).getTime()
-    outputObject['utc'] = new Date(input).toUTCString()
+app.get('/api/:date?', (req, res) => {
+  let date_string = req.params.date;
+  let outputObject = {};
+
+  if (!date_string) {
+    // If date_string is empty, use the current time
+    outputObject['unix'] = new Date().getTime();
+    outputObject['utc'] = new Date().toUTCString();
+    res.json(outputObject);
+    return;
   }
 
-  if (!outputObject['unix'] || !outputObject['utc']) {
-    res. json({error: 'Invalid Date'})
-  }
-  res.json(outputObject)
-})
+  let date = new Date(date_string);
 
-app.get('/api', (req,res) => {
-  outputObject['unix'] = new Date().getTime()
-  outputObject['utc'] = new Date().toUTCString()
-  res.json(outputObject)
-})
+  if (!isNaN(date.getTime())) {
+    // If parsing the date string as a date object is successful
+    outputObject['unix'] = date.getTime();
+    outputObject['utc'] = date.toUTCString();
+  } else if (!isNaN(parseInt(date_string))) {
+    // If the date string is a valid UNIX timestamp
+    let unixTime = parseInt(date_string);
+    outputObject['unix'] = unixTime;
+    outputObject['utc'] = new Date(unixTime).toUTCString();
+  } else {
+    // If the date string is invalid
+    outputObject['error'] = 'Invalid Date';
+  }
+
+  res.json(outputObject);
+});
+
+
